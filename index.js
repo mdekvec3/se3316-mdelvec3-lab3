@@ -20,38 +20,83 @@ app.get('/', (req, res) => {
 
 // get all available subjects
 app.get('/subjects', (req, res) => {
+	
 	var subjectArray = [];
-	//console.log(data);
+	var JSOBJ = [];
 
-	//var jsDataObj = data.map((x) => x = JSON.parse(JSON.stringify(x)));
-
-	//var JSOBJ = data.map( x => (JSON.stringify(x)));
-	//console.log("singified: " + JSOBJ)
-
-	var JSOBJ= [];
 	for(var i =0 ; i< data.length; i++){
 		JSOBJ[i] = JSON.stringify(data[i]);
 	}
-	console.log(JSOBJ);
 
 	var NEWJSOBJ = [];
 	for(var i =0 ; i< data.length; i++){
 			NEWJSOBJ[i] = JSON.parse(JSOBJ[i]);
-		}
-	console.log(NEWJSOBJ);
-	//console.log(NEWJSOBJ[2].subject)
+	}
 
 	for(var obj in NEWJSOBJ){
 
 		//check for null?
-	
-	console.log(obj.subject);
 
-	// add the subject to the subject array if not already added
-	if (!subjectArray.includes(NEWJSOBJ[obj].subject)){
-			subjectArray.push(NEWJSOBJ[obj].subject);
-		}
+		// add the subject to the subject array if not already added
+		if (!subjectArray.includes(NEWJSOBJ[obj].subject)){
+				subjectArray.push(NEWJSOBJ[obj].subject);
+			}
+	}
+	// return the subject array 
+	console.log("response sent");
+	res.send(subjectArray);
+});
+
+app.get('/descriptions', (req, res) => {
+	
+	var subjectArray = [];
+	var JSOBJ= [];
+
+	for(var i =0 ; i< data.length; i++){
+		JSOBJ[i] = JSON.stringify(data[i]);
+	}
+
+	var NEWJSOBJ = [];
+	for(var i =0 ; i< data.length; i++){
+			NEWJSOBJ[i] = JSON.parse(JSOBJ[i]);
+	}
+	
+	for(var obj in NEWJSOBJ){
 		
+		if (!subjectArray.includes(NEWJSOBJ[obj].catalog_description)){
+				subjectArray.push(NEWJSOBJ[obj].catalog_description);
+			}
+	}
+	// return the subject array 
+	console.log("response sent");
+	res.send(subjectArray);
+});
+
+//correct route format?
+app.get('/:subject/courses', (req, res) => {
+	
+	var coursesInSubject = [];
+	var JSOBJ = [];
+
+	for(var i =0 ; i< data.length; i++){
+		JSOBJ[i] = JSON.stringify(data[i]);
+	}
+
+	var NEWJSOBJ = [];
+	for(var i =0 ; i< data.length; i++){
+			NEWJSOBJ[i] = JSON.parse(JSOBJ[i]);
+	}
+
+	for(var obj in NEWJSOBJ){
+		
+		// only add courses if subject matches one specified
+		if(obj.subject == req.params.subject){
+
+			// check if array already includes catalog (course) number
+			if (!coursesInSubject.includes(NEWJSOBJ[obj].catalog_nbr)){
+					subjectArray.push(NEWJSOBJ[obj].catalog_nbr);
+				}
+		}
 	}
 	// return the subject array 
 	console.log("response sent");
@@ -68,7 +113,7 @@ app.listen(3000, () => console.log("listening on port 3000"));
 //app.post()
 //app.delete()
 
-var data = [
+var data = 
 {
   "catalog_nbr": "1021B",
   "subject": "ACTURSCI",

@@ -1,51 +1,58 @@
 // create index.js file inside express directory (directory with express installed; has package.json and package-lock.json files after init)
 
 // loading the express module - it returns a function, so we set it to a functino to call later
-const express = require('express');
-const timetable = require("./Lab3-timetable-data.json");
+  const express = require('express');
+  const bodyParser = require('body-parser');
+  const timetable = require("./Lab3-timetable-data.json");
 
+// setting up data storage
+  var fs = require('fs');
+  var readFile = fs.readFileSync('data.json');
+  var data = JSON.parse(readFile);  // sync wait for file to load before moving on; we want this unless reading and writing
+  
 // set the function output to a constant called app
-const app = express();
+  const app = express();
 
-/*  implimenting endpoints that respond to http 'get' request - add new routes with app.get(), thanks to express
-* method takes 2 arguments:
-*   1. path or URL of endpoint
-* 2. callback funciton (AKA "route handler" ) that will be called when we have an http GET rquest to said endpoint
-*     callback function has 2 arguments:
-*       1. request object
-*       2. response object
-*/
+// This will ensure that the body-parser will run before our route, which ensures that our route can then access the parsed HTTP POST body              
+// configuring express to use body-parser as middle-ware. 
+  app.use(express.json());  // for parsing application/json objects passed in POST bodies
+  app.use(bodyParser.urlencoded({ extended: false }));
+  app.use(bodyParser.json());
+
+
 app.get('/', (req, res) => {
   res.send('Hello World From epxress.js');
+  return;
 });
-
 
 // seperate method that is just for courses? not w descriptions
 // make all into one method? optional params handled within?
 
-// #1
-// get all available subject with their descriptions
-app.get('/subjects', (req, res) => {
+// test method
+app.get('/api/test', (req, res) => {
   
-  var subjectArray = [];
+  var response = [];
+  var RepeatedCourseCodeArray = [];
+  var courseComponentArray = [];
 
-  // loop through objects to get all subjects 
-    
-    for(var obj in timetable){
-
-      // add the subject to the subject array if not already added
-        
-        if (!subjectArray.includes(timetable[obj].subject)){
-            subjectArray.push(timetable[obj].subject + ": " + timetable[obj].catalog_description);
-          }
+  // get array of obejcts that repeat course codes    
+    for(var i in timetable){
+      for(var j in timetable){
+        if(timetable[i].subject == timetable[j].subject && timetable[i].catalog_nbr == timetable[j].catalog_nbr && timetable[j].course_info[0].ssr_component != timetable[i].course_info[0].ssr_component){
+          RepeatedCourseCodeArray.push(timetable[j].catalog_nbr);
+          RepeatedCourseCodeArray.push(timetable[i].catalog_nbr);
+        }
+      }
     }
+   
   // return the subject array 
     console.log("response sent");
-    res.send(subjectArray);
+    res.send(RepeatedCourseCodeArray);
+    return;
 });
 
 //returns just a subject list
-app.get('/subjects-without-descriptions', (req, res) => {
+app.get('/api/subjects-without-descriptions', (req, res) => {
   
   var subjectArray = [];
 
@@ -62,33 +69,33 @@ app.get('/subjects-without-descriptions', (req, res) => {
   // return the subject array 
     console.log("response sent");
     res.send(subjectArray);
+    return;
 });
 
-app.get('/test', (req, res) => {
+// #1
+// get all available subject with their descriptions
+app.get('/api/subjects', (req, res) => {
   
-  var response = [];
-  var RepeatedCourseCodeArray = [];
-  var courseComponentArray = [];
+  var subjectArray = [];
 
-  // get array of obejcts that repeat course codes    
-    for(var i in timetable){
-      for(var j in timetable){
-        if(timetable[i].subject == timetable[j].subject && timetable[i].catalog_nbr == timetable[j].catalog_nbr && timetable[j].course_info[0].ssr_component != timetable[i].course_info[0].ssr_component){
-          console.log(timetable[i].catalog_nbr + " And " +  timetable[j].catalog_nbr );
-          RepeatedCourseCodeArray.push(timetable[j].catalog_nbr);
-          RepeatedCourseCodeArray.push(timetable[i].catalog_nbr);
-        }
-      }
+  // loop through objects to get all subjects 
+    
+    for(var obj in timetable){
+
+      // add the subject to the subject array if not already added
+        
+        if (!subjectArray.includes(timetable[obj].subject)){
+            subjectArray.push(timetable[obj].subject + ": " + timetable[obj].catalog_description);
+          }
     }
-   
   // return the subject array 
     console.log("response sent");
-    res.send(RepeatedCourseCodeArray);
+    res.send(subjectArray);
+    return;
 });
 
-
-
-app.get('/subjects/:subject/courses', (req, res) => {
+// #2
+app.get('/api/subjects/:subject/courses', (req, res) => {
 
   var coursesInSubject = [];
 
@@ -116,26 +123,12 @@ app.get('/subjects/:subject/courses', (req, res) => {
   // return the subject array 
     console.log("response sent");
     res.send(coursesInSubject);
+    return;
 });
 
-let getCourseInfoValue = function(propertyVal){
-  let course_info = this.course_info;
-
-  for(var arrayItem in course_info) {
-    
-    for(var property in arrayItem ){
-
-      // if the property matches the one passed in, return said property's value
-      if(property + "" == propertyVal){
-        return course_info[arrayItem].property;
-      }
-    }
-  }
-
-}
-
+// #3
 // get timetable entry for specified subject code 
-app.get('/subjects/:subject/courses/:course/courseComponents/:courseComponent?', (req, res) => {
+app.get('/api/subjects/:subject/courses/:course/courseComponents/:courseComponent?', (req, res) => {
 
   let objectArray = [];
 
@@ -224,11 +217,143 @@ app.get('/subjects/:subject/courses/:course/courseComponents/:courseComponent?',
   // return the subject array 
     console.log("response sent");
     res.send(objectArray);
+    return;
 });
 
-app.listen(3000, () => console.log("listening on port 3000"));
 
-//app.post()
+// #4
+// save schedule under schedule name, return error if already exists
+app.post('/api/schedules/:scheduleName', async (req, res) => {
+    
+    // if schedule name already exists 
+
+      if(data[req.params.scheduleName]){
+        res.status(403).send("The specified resource name already exists");
+      }
+
+    // else add subject to list
+
+      data[req.params.scheduleName] = {};
+      var dataJSON = JSON.stringify(data, null, 2);
+      fs.writeFileSync('data.json', dataJSON, () => console.log("POST request resouce written to file"));
+      res.end();
+});
+
+/* data looks like:
+
+data = {
+  schedule1: {subjectCode: courseCode, 
+              subjectCode2: courseCode2, 
+              subjectCode3: courseCode3
+              },
+  schedule2: {subjectCode: courseCode, 
+              subjectCode2: courseCode2, 
+              subjectCode3: courseCode3
+              },
+  schedule3: {subjectCode: courseCode, 
+              subjectCode2: courseCode2, 
+              subjectCode3: courseCode3
+              },
+}
+
+*/
+
+// #5
+app.put('/api/schedules/:scheduleName', (req, res) => {
+    
+    const body = req.body;
+    console.log(body);
+    const scheduleName = req.params.scheduleName;
+
+    // if schedule name doesn't exists 
+
+      if(!data[req.params.scheduleName]){
+        res.status(403).send("The specified resource doesn't exist");
+      }
+
+    // else add body to existing resource
+
+      // body is an {...} object
+      data[scheduleName] = body;
+      var dataJSON = JSON.stringify(data, null, 2);
+      fs.writeFileSync('data.json', dataJSON, () => console.log("resource updated"));
+      res.send("resource updated"); 
+});
+
+// #6
+app.get('/api/schedules/:scheduleName', (req, res) => {
+
+  console.log("getting schedule");
+  const scheduleName = req.params.scheduleName;
+
+  // if schedule name doesn't exists 
+
+      if(!data[req.params.scheduleName]){
+        res.status(403).send("The specified resource doesn't exist");
+      }
+
+  // else return the object
+
+      res.send(data[scheduleName]);
+});
+
+// #7
+app.delete('/api/schedules/:scheduleName', (req, res) => {
+
+  console.log("deleting schedule");
+  const scheduleName = req.params.scheduleName;
+
+  // if schedule name doesn't exists 
+
+      if(!data[req.params.scheduleName]){
+        res.status(403).send("The specified resource doesn't exist");
+      }
+
+  // else delete the resource
+
+      delete data[scheduleName];
+      var dataJSON = JSON.stringify(data, null, 2);
+      fs.writeFileSync('data.json', dataJSON);
+      res.send("resource deleted");
+});
+
+// #8
+// better formatting for specifying scheduleList?
+app.get('/api/schedulesList', (req, res) => {
+
+  console.log("getting schedules");
+  let scheduleList = {};
+
+  for(var schedule in data){
+    scheduleList[schedule] = Object.keys(data[schedule]).length;
+  }
+
+  console.log(scheduleList);
+
+  // else return the object
+
+      res.send(scheduleList);
+});
+
+// #9
+// fine if this matches GET route '/api/schedules/' bc this is a different verb - delete
+app.delete('/api/schedules', (req, res) => {
+
+  console.log("deleting schedules");
+  let deletedScheduleList = data;
+
+  // deleteing all the schedules (setting obejct to empty)
+      var emptyObj = {};
+      var dataJSON = JSON.stringify(emptyObj, null, 2);
+      fs.writeFileSync('data.json', dataJSON);
+      res.send(deletedScheduleList);
+});
+
+// Port
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log("listening on port " + port));
+
+//app.put()
 //app.post()
 //app.delete()
 let JSdata = [];

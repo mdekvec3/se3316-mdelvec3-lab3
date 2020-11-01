@@ -18,10 +18,11 @@ app.get('/', (req, res) => {
 	res.send('Hello World From epxress.js');
 });
 
-// todo: write funciton to  
 
+// seperate method that is just for courses? not w descriptions
+// make all into one method? optional params handled within?
 
-// get all available subjects
+// get all available subject with their descriptions
 app.get('/subjects', (req, res) => {
 	
 	var subjectArray = [];
@@ -38,11 +39,9 @@ app.get('/subjects', (req, res) => {
 
 	for(var obj in NEWJSOBJ){
 
-		//check for null?
-
 		// add the subject to the subject array if not already added
 		if (!subjectArray.includes(NEWJSOBJ[obj].subject)){
-				subjectArray.push(NEWJSOBJ[obj].subject);
+				subjectArray.push(NEWJSOBJ[obj].subject + ": " + NEWJSOBJ[obj].catalog_description);
 			}
 	}
 	// return the subject array 
@@ -50,6 +49,7 @@ app.get('/subjects', (req, res) => {
 	res.send(subjectArray);
 });
 
+/* removed; descriptions and sugbjects need to be retuend together
 app.get('/descriptions', (req, res) => {
 	
 	var subjectArray = [];
@@ -74,11 +74,12 @@ app.get('/descriptions', (req, res) => {
 	console.log("response sent");
 	res.send(subjectArray);
 });
-
+*/
 
 // not tested yet
 //correct route format?
-app.get('/:subject/courses', (req, res) => {
+// fix route format
+app.get('subjects/:subject/courses', (req, res) => {
 
 	var coursesInSubject = [];
 	var JSOBJ = [];
@@ -121,7 +122,7 @@ app.get('/:subject/courses', (req, res) => {
 });
 
 // get timetable entry for specified subject code 
-app.get('/:subject/:course/:courseComponent?', (req, res) => {
+app.get('subjects/:subject/courses/:course/courseComponents/:courseComponent?', (req, res) => {
 
 	console.log("course component param: " + req.param.courseComponent);
 	
@@ -186,7 +187,7 @@ app.get('/:subject/:course/:courseComponent?', (req, res) => {
 		
 		if(coursesInSubject.length == 0){
 
-			if(!subjectExixts && !courseNumberExists{
+			if(!subjectExixts && !courseNumberExists){
 				res.status(404).send("The specified subject and course number could not be found");
 			}
 			if(!subjectExixts){
@@ -195,7 +196,6 @@ app.get('/:subject/:course/:courseComponent?', (req, res) => {
 			if(!courseNumberExists){
 				res.status(404).send("The specified course number could not be found");
 			}
-			r
 		}
 	
 	// return the subject array 

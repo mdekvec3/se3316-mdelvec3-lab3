@@ -18,6 +18,9 @@ app.get('/', (req, res) => {
 	res.send('Hello World From epxress.js');
 });
 
+// todo: write funciton to  
+
+
 // get all available subjects
 app.get('/subjects', (req, res) => {
 	
@@ -72,9 +75,11 @@ app.get('/descriptions', (req, res) => {
 	res.send(subjectArray);
 });
 
+
+// not tested yet
 //correct route format?
 app.get('/:subject/courses', (req, res) => {
-	
+
 	var coursesInSubject = [];
 	var JSOBJ = [];
 
@@ -87,25 +92,116 @@ app.get('/:subject/courses', (req, res) => {
 			NEWJSOBJ[i] = JSON.parse(JSOBJ[i]);
 	}
 
-	for(var obj in NEWJSOBJ){
-		
-		// only add courses if subject matches one specified
-		if(obj.subject == req.params.subject){
+	// loop thorugh JSON object and find subjects 
 
-			// check if array already includes catalog (course) number
-			if (!coursesInSubject.includes(NEWJSOBJ[obj].catalog_nbr)){
-					subjectArray.push(NEWJSOBJ[obj].catalog_nbr);
+		for(var obj in NEWJSOBJ){
+			
+			// only add courses if subject matches one specified
+
+				if(obj.subject == req.params.subject){
+
+					// check if array already includes catalog (course) number 		// might break cuz " " + ... willl never match ...
+						
+						if (!coursesInSubject.includes(NEWJSOBJ[obj].catalog_nbr)){
+								subjectArray.push("" + NEWJSOBJ[obj].catalog_nbr);
+							}
 				}
 		}
-	}
+
+	// if subject code doesnt exist; length of array is zero
+
+		if(coursesInSubject.length == 0){
+			res.status(404).send("The specified course could not be found")
+		}
+
 	// return the subject array 
-	console.log("response sent");
-	res.send(subjectArray);
+
+		console.log("response sent");
+		res.send(subjectArray);
 });
 
-function searchBySubject(subject){
+// get timetable entry for specified subject code 
+app.get('/:subject/:course/:courseComponent?', (req, res) => {
 
-}
+	console.log("course component param: " + req.param.courseComponent);
+	
+	var objectArray = [];
+	var JSOBJ = [];
+
+	for(var i =0 ; i< data.length; i++){
+		JSOBJ[i] = JSON.stringify(data[i]);
+	}
+
+	var NEWJSOBJ = [];
+	for(var i =0 ; i< data.length; i++){
+			NEWJSOBJ[i] = JSON.parse(JSOBJ[i]);
+	}
+
+	// track if subject and cour match anything so error can be sent
+
+		let subjectExixts = false;
+		let courseNumberExists = false;
+		let courseComponentExists = false;
+
+	// check if course component exists
+
+		for(var obj in NEWJSOBJ){
+			if(obj.course_info.ssr_component == req.params.courseComponent){
+				courseComponentExists = true;
+			}
+		}
+
+	// loop through JSON and search for specified data
+	
+		for(var obj in NEWJSOBJ){
+			
+			// check every time if subject and course 
+
+				if(obj.subject == req.params.subject){
+					subjectExixts = true;
+				}
+
+				if(obj.catalog_nbr == req.params.course){
+					courseNumberExists = true;
+				}
+
+			// only add courses if subject and course nbr (exactly) matches ones specified
+
+				if(obj.subject == req.params.subject && obj.catalog_nbr == req.params.course){
+
+					// if the courseComponent was specified and matches, add only the one componeent, else add all components
+						if(courseComponent){
+
+						}
+
+					// check if array already includes catalog (course) number
+
+						else if (!coursesInSubject.includes(NEWJSOBJ[obj])){
+								subjectArray.push("" + NEWJSOBJ[obj]);
+							}
+				}
+		}
+
+	// if array nothing matched, check if course or suvbject didn't match
+		
+		if(coursesInSubject.length == 0){
+
+			if(!subjectExixts && !courseNumberExists{
+				res.status(404).send("The specified subject and course number could not be found");
+			}
+			if(!subjectExixts){
+				res.status(404).send("The specified subject could not be found");
+			}
+			if(!courseNumberExists){
+				res.status(404).send("The specified course number could not be found");
+			}
+			r
+		}
+	
+	// return the subject array 
+		console.log("response sent");
+		res.send(subjectArray);
+});
 
 app.listen(3000, () => console.log("listening on port 3000"));
 

@@ -4,6 +4,7 @@
   const express = require('express');
   const bodyParser = require('body-parser');
   const timetable = require("./Lab3-timetable-data.json");
+  //const cors = require('cors')
 
 // setting up data storage
   var fs = require('fs');
@@ -18,6 +19,7 @@
   app.use(express.json());  // for parsing application/json objects passed in POST bodies
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(bodyParser.json());
+  //app.use(cors);
 
 
 app.get('/', (req, res) => {
@@ -381,6 +383,7 @@ app.get('/api/subjects/:subject', (req, res) => {
 
   // if subject code doesnt exist; length of array is zero
     if(coursesInSubject.length == 0){
+      console.log("empty");
       res.status(404).send("The specified course could not be found")
     }
 

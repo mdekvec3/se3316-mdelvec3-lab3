@@ -10,11 +10,16 @@ body: JSON.stringify({ subjectNo1: courseNo1, subjectNo2: courseNo2, subjectNo3:
 // " Replace existing subject-code + course-code pairs with new values and create new pairs if it doesn’t exist."
 // what does this mean?^
 
-var tableData = []	// full or empty list by default?
+var tableData = [];	// full or empty list by default?
 const port = 3000;
+
 // when search is submitted
 
-	let searchSubmitted = function(){
+	let insertAfter = function(newNode, referenceNode) {
+	    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+	};
+
+	async function searchSubmitted(){
 
 		// setup
 
@@ -24,8 +29,7 @@ const port = 3000;
 			let componentValue = document.getElementById("componentDropdown").value;	// optional
 
 		// setup query string
-			
-			queryString += "localhost:" + port + "/api/subjects/" + subjectValue;
+			queryString += "http://localhost:" + port + "/api/subjects/" + subjectValue;
 
 			// if course value assigned fetch from route #3, else, use route #2 (search by subject only)
 				
@@ -42,46 +46,106 @@ const port = 3000;
 
 		// fetch call with defined query string as param
 
-			// fetch("amazon-web-server-address/...") change to after
-			fetch(queryString , {
- 			method: 'GET',
- 			headers: {		// do I need this?
-				'Content-Type': 'application/json',
- 			},
- 			// body removed; don't need?
-	 		}).then(response => response.json())	// "body.json() is a function that reads the response stream to completion and parses the response as json"
-	 		.then(data => { console.log("success: " + data + "response: " + response) })
-	 		.catch((error) => {
-	 		console.error("error", error)
-	 		});
+			let jsonData;
 
+			// fetch("amazon-web-server-address/...") change to after
+			let response = await fetch(queryString , {
+	 			method: 'GET',
+	 			headers: {		// do I need this?
+					'Content-Type': 'application/json',
+	 			},
+	 		})/*.then(response => JSON.parse(response.body)})*/
+	 		.catch((error) => { console.error("error", error); });
+
+	 		if(response.ok){
+	 			jsonData = await response.json();
+	 			console.log(response.text);
+	 		}
+			
 			// render returned object in table
-			console.log(data);
-			//renderTable(data);
+				console.log(jsonData);
+				//renderTable(data); not implimented yetx
+	};
+
+// object used to map headers corresponding properties
+// todo: to ensure we have all of these
+	let headerInfo = {
+		"Course number" : "catalog_nbr",
+		"Subject" : "subject",
+		"Days" : "days",
+		"Start time" : "start_time",
+		"End time" : "end_time",
+		"Course component" : "ssr_component",
+		"Section": "class_section",
+		"Campus": "campus",
+		"Description": "catalog_description",
+		"Status" : "enrl_stat",
+		"Requisites and Constraints": "descr",
+		"Instructors" : "instructors",
 	};
 
 // render table
 	
 	let renderTable = function(data){
-		 /* 4 columns: 	course number (catalog_nbr),
-						subject (subject)
-						course info (course_info) - > put details into string or make seperate columns?
-							days (days)
-							start time (start_time)
-							end time (end_time)
-							course component (ssr_component)
-							section (class_section)
-							campus (campus)
 
-						description (catalog_description)
+		let parentContainer = document.getElementById("infoTableContainer");
+		let tableObject = document.getElementById("infoTable");	// may or may not esixt, we are creating it in this method
+		
+		// if table already exists, delete it
+			if(tableObject != null){
+				while(tableObject.firstChild){
+					tableObject.removeChild(tableObject.firstChild)
+				}
+				tableObject.remove();
+			} 
 
-						column for select / add to schedule button ?
-		 */
+		// generate table and header row ( we will loop through and create info rows )
 
+			let table = document.createElement("div");
+			table.id = "infoTable";
+			table.className = "";	// todo
+			parentContainer.appendChild(table);
+
+			var headerRow = document.createElement("tr");
+			headerRow.class = "tableHeaderRow";
+
+			// generate column for every header item and append it to parent 
+
+				for(var column in headerInfo){
+					let colElement = document.createElement("td");
+					let colText = document.createTextNode(headerInfo[column]);
+					colElement.appendChild(colText);
+					table.appendChild(colElement); // can we reference table like this?
+				}
+
+			// generate column for part of schedule checkbox
+
+				let colElement = document.createElement("td");
+				let colText = document.createTextNode("included in active schedule");
+				colElement.appendChild(colText);
+				table.appendChild(colElement);
+
+			// render row for each course object in data
+
+				for(var courseObj in data ){
+					var courseRow = document.createElement("tr");
+					courseRow.class = "courseRow";
+
+					// render columns
+
+						for(var column in headerInfo){
+							let colElement = document.createElement("td");
+							let colText = document.createTextNode(data[courseObj][]);
+							colElement.appendChild(colText);
+							table.appendChild(colElement);
+						}
+				}
+		 
 		 // render shortened list above for list of all selected courses to easily remove and see list
 		 // schedule stays the same as they search through courses to add
 		 // notify if conficts?
-	}
+	};
+
 
 // render schedule data into table
 	

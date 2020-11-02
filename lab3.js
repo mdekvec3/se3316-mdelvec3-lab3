@@ -59,29 +59,33 @@ const port = 3000;
 
 	 		if(response.ok){
 	 			jsonData = await response.json();
-	 			console.log(response.text);
 	 		}
 			
 			// render returned object in table
 				console.log(jsonData);
-				//renderTable(data); not implimented yetx
+				renderTable(jsonData);
 	};
 
 // object used to map headers corresponding properties
 // todo: to ensure we have all of these
 	let headerInfo = {
 		"Course number" : "catalog_nbr",
+		"Class Name": "className",
 		"Subject" : "subject",
-		"Days" : "days",
+		"Description": "catalog_description",
+		
+		// below are part of course_iunfo object
+		/*"Days" : "days",
+		"Class Number" : "class_nbr",
 		"Start time" : "start_time",
 		"End time" : "end_time",
 		"Course component" : "ssr_component",
 		"Section": "class_section",
 		"Campus": "campus",
-		"Description": "catalog_description",
+		"Instructors" : "instructors",
 		"Status" : "enrl_stat",
 		"Requisites and Constraints": "descr",
-		"Instructors" : "instructors",
+		*/
 	};
 
 // render table
@@ -101,7 +105,7 @@ const port = 3000;
 
 		// generate table and header row ( we will loop through and create info rows )
 
-			let table = document.createElement("div");
+			let table = document.createElement("table");
 			table.id = "infoTable";
 			table.className = "";	// todo
 			parentContainer.appendChild(table);
@@ -113,9 +117,9 @@ const port = 3000;
 
 				for(var column in headerInfo){
 					let colElement = document.createElement("td");
-					let colText = document.createTextNode(headerInfo[column]);
+					let colText = document.createTextNode(column);
 					colElement.appendChild(colText);
-					table.appendChild(colElement); // can we reference table like this?
+					headerRow.appendChild(colElement);
 				}
 
 			// generate column for part of schedule checkbox
@@ -123,11 +127,16 @@ const port = 3000;
 				let colElement = document.createElement("td");
 				let colText = document.createTextNode("included in active schedule");
 				colElement.appendChild(colText);
-				table.appendChild(colElement);
+				headerRow.appendChild(colElement);
+
+			// append header row to table
+				table.appendChild(headerRow);
+
 
 			// render row for each course object in data
 
 				for(var courseObj in data ){
+
 					var courseRow = document.createElement("tr");
 					courseRow.class = "courseRow";
 
@@ -135,10 +144,53 @@ const port = 3000;
 
 						for(var column in headerInfo){
 							let colElement = document.createElement("td");
-							let colText = document.createTextNode(data[courseObj][]);
+							
+							// check if part of course_info object bc then extra route has to be added to access property
+							console.log(column);
+
+							// doesnt work for some reason - removed broken columns for now 
+							/*if(column != "Class Name" && column != "Subject" && column != "Description" && column != "Course number" ){
+								let text = "" + data[courseObj]["course_info"][0][headerInfo[column]];
+								let colText = document.createTextNode(text);
+							}
+							else{
+								let colText = document.createTextNode(data[courseObj][headerInfo[column]]);
+							}
+							*/
+							
+							let colText = document.createTextNode(data[courseObj][headerInfo[column]]);
+							console.log(data[courseObj][headerInfo[column]]);
+							
 							colElement.appendChild(colText);
-							table.appendChild(colElement);
+							courseRow.appendChild(colElement);	
 						}
+
+					// and finally add checkbox column for each row
+						
+						let colElement = document.createElement("td");
+						let colCheckBox = document.createElement('input');
+						colCheckBox.type = "checkbox";
+						//colCheckBox.value = false;
+
+						//colCheckBox.value = courseObj;
+						//colCheckBox.onclick = checkBoxEvent();	// called to add or remove from course list
+						colCheckBox.name = "included in schedule";	// do anything? label?
+						colCheckBox.id = "rowCheckBox";		// getting this value will be difficult but probs can be done through parent row
+						
+						colCheckBox.addEventListener( 'change', function() {
+    						if(this.checked) {
+        						// append this key value pair to array
+
+    						} else {
+        						// remove this key value pair from array
+    						}
+							});
+
+						colElement.appendChild(colCheckBox);
+						courseRow.appendChild(colElement);
+
+					// append course row to table
+						table.appendChild(courseRow);
 				}
 		 
 		 // render shortened list above for list of all selected courses to easily remove and see list
@@ -146,18 +198,80 @@ const port = 3000;
 		 // notify if conficts?
 	};
 
+// add or remove course from 'selectedCourses' array 
+	
+	
+	
+	/*
+	let checkBoxEvent = function(checkBox){
+		console.log("onchange");
+		//console.log(checkBox.value);
+		
+		if(checkBox.checked){
+			selectedCourses.push()
+		}else{
 
-// render schedule data into table
+		}
+	} 
+	*/
+
+// todo add functionality to add selected table rows to schedule list which can then be added to a schdule
+
+// create schedule based on selected courses  and provoding schedule name - ( todo add fucntionality where you can re search and keep selected courses)
+	
+	let selectedCourses = []; // append table courses to this array when they are selected to be added
+	
+	let createSchedule = function(){
+
+		// get corresponding subject code, course code pairs from 'selectedCourses' array
+
+			//put them into an object w "subject code, course code pairs under a given schedule name"
+
+		// get schedule name from schedule name input box
+
+		// fetch and put the object to the API w schedule name
+	}
+
+// render schedule preview data into table
+// todo maybe add checkboxes beside 
 	
 	let renderSchedule = function(scheduleData){
 		
 		let data = scheduleData;
 
-		// assume html table (row and column elements) already exist 
-		// we just need to replace them based on times by getting elemts by id
+		let parentContainer = document.getElementById("schedulePreview");
+		let table = document.createElement("table");
 
-		// push 
+		let row = document.createElement("tr");
+		let col1 = document.createElement("tr");
+		
+		let col2 = document.createElement("tr");
+		col2.id = "infoColumn"; // give column 2 an id so we can append data to it
+
+
+		row.appendChild(col1);
+		row.appendChild(col2);
+
+		let scheduleDropdown = document.createElement('input');
+		colCheckBox.type = "select";
+		colCheckBox.name = "schedule list";	// do anything? label?
+		colCheckBox.id = "scheduleDropdown";
+		colCheckBox.onChange = fillScheduleInfo();
+
+		// fetch from api to get list of schedule names
+
+			// loop through schedule object and create select option nodes for each
+
 	};
+
+	// render schedule course list into table
+	let fillScheduleInfo = function(){
+		let value = document.getElementById(scheduleDropdown);
+
+		// fetch schedule courses from api
+
+		// for each course add course name to data 
+	}
 
 /* Promise Notes:
  *

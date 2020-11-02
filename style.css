@@ -4,6 +4,10 @@
 	text-decoration-color: grey;
  }
 
+ .scheduleInfoSection{
+ 	width: 65%;
+ }
+
 .submit{
 	margin-top: 15px;
 }

@@ -1,0 +1,55 @@
+.westernInformation { 
+	background-color : lightblue;
+	font-family : sans-serif;
+	text-decoration-color: grey;
+ }
+
+.submit{
+	margin-top: 15px;
+}
+.submitButton {
+	background-color : darkblue;
+	width: 100%;
+	border: none;
+	padding: 9px 20px;
+	font-size: 16px;
+	cursor: pointer;
+	text-align: center;
+}
+
+.required-field::after {
+	content: "*";
+	color: red;
+}
+
+.lineDivider{
+	background-color: white;
+	height: 2px;
+	width: 100%;
+}
+
+.link {
+	text-decoration: none;
+}
+
+.searchSection {
+	font-size: 40px;
+	text-decoration-color: grey;
+ }
+
+.padEntireBody {
+	max-width:1500px;
+	border:2px solid #000000;
+	padding:1rem;
+	margin:1rem auto; 
+	margin-right: 0;
+	margin-left: 0;
+
+
+}
+
+ .boldentext {
+ 	font-weight: bold;
+ }
+
+

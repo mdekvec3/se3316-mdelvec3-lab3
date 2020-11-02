@@ -127,7 +127,7 @@ app.get('/api/subjects/:subject/courses', (req, res) => {
 });
 
 // #3
-// get timetable entry for specified subject code 
+// get timetable entry for specified subject code, course code and course component (optional) 
 app.get('/api/subjects/:subject/courses/:course/courseComponents/:courseComponent?', (req, res) => {
 
   let objectArray = [];
@@ -137,7 +137,7 @@ app.get('/api/subjects/:subject/courses/:course/courseComponents/:courseComponen
     let subjectExixts = false;
     let courseNumberExists = false;
 
-  // if specified we can quickly just return that course component
+  // if specified we can quickly just return that course component - don't compare course code though bc they won't match
     
     if(req.params.courseComponent){
       
@@ -259,11 +259,13 @@ data = {
 */
 
 // #5
+// save a list of subject code course code pairs to an existing schedule
 app.put('/api/schedules/:scheduleName', (req, res) => {
     
-    const body = req.body;
-    console.log(body);
-    const scheduleName = req.params.scheduleName;
+    // validate that subject code - course code pairs are valid? or do in front end 
+      const body = req.body;
+      console.log(body);
+      const scheduleName = req.params.scheduleName;
 
     // if schedule name doesn't exists 
 
@@ -281,79 +283,115 @@ app.put('/api/schedules/:scheduleName', (req, res) => {
 });
 
 // #6
-app.get('/api/schedules/:scheduleName', (req, res) => {
+// get a list of subject code - course code pairs from a given schedule
+ 
+  app.get('/api/schedules/:scheduleName', (req, res) => {
 
-  console.log("getting schedule");
-  const scheduleName = req.params.scheduleName;
+    console.log("getting schedule");
+    const scheduleName = req.params.scheduleName;
 
-  // if schedule name doesn't exists 
+    // if schedule name doesn't exists 
 
-      if(!data[req.params.scheduleName]){
-        res.status(403).send("The specified resource doesn't exist");
-      }
+        if(!data[req.params.scheduleName]){
+          res.status(403).send("The specified resource doesn't exist");
+        }
 
-  // else return the object
+    // else return the object
 
-      res.send(data[scheduleName]);
-});
+        res.send(data[scheduleName]);
+  });
 
 // #7
-app.delete('/api/schedules/:scheduleName', (req, res) => {
+// delete schedule with a given namem
 
-  console.log("deleting schedule");
-  const scheduleName = req.params.scheduleName;
+  app.delete('/api/schedules/:scheduleName', (req, res) => {
 
-  // if schedule name doesn't exists 
+    console.log("deleting schedule");
+    const scheduleName = req.params.scheduleName;
 
-      if(!data[req.params.scheduleName]){
-        res.status(403).send("The specified resource doesn't exist");
-      }
+    // if schedule name doesn't exists 
 
-  // else delete the resource
+        if(!data[req.params.scheduleName]){
+          res.status(403).send("The specified resource doesn't exist");
+        }
 
-      delete data[scheduleName];
-      var dataJSON = JSON.stringify(data, null, 2);
-      fs.writeFileSync('data.json', dataJSON);
-      res.send("resource deleted");
-});
+    // else delete the resource
+
+        delete data[scheduleName];
+        var dataJSON = JSON.stringify(data, null, 2);
+        fs.writeFileSync('data.json', dataJSON);
+        res.send("resource deleted");
+  });
 
 // #8
 // better formatting for specifying scheduleList?
-app.get('/api/schedulesList', (req, res) => {
+   
+    app.get('/api/schedulesList', (req, res) => {
 
-  console.log("getting schedules");
-  let scheduleList = {};
+      console.log("getting schedules");
+      let scheduleList = {};
 
-  for(var schedule in data){
-    scheduleList[schedule] = Object.keys(data[schedule]).length;
-  }
+      for(var schedule in data){
+        scheduleList[schedule] = Object.keys(data[schedule]).length;
+      }
 
-  console.log(scheduleList);
+      console.log(scheduleList);
 
-  // else return the object
+      // else return the object
 
-      res.send(scheduleList);
-});
+          res.send(scheduleList);
+    });
 
 // #9
 // fine if this matches GET route '/api/schedules/' bc this is a different verb - delete
-app.delete('/api/schedules', (req, res) => {
+  
+  app.delete('/api/schedules', (req, res) => {
 
-  console.log("deleting schedules");
-  let deletedScheduleList = data;
+    console.log("deleting schedules");
+    let deletedScheduleList = data;
 
-  // deleteing all the schedules (setting obejct to empty)
-      var emptyObj = {};
-      var dataJSON = JSON.stringify(emptyObj, null, 2);
-      fs.writeFileSync('data.json', dataJSON);
-      res.send(deletedScheduleList);
+    // deleteing all the schedules (setting obejct to empty)
+        var emptyObj = {};
+        var dataJSON = JSON.stringify(emptyObj, null, 2);
+        fs.writeFileSync('data.json', dataJSON);
+        res.send(deletedScheduleList);
+  });
+
+// not tested
+// (route #10) front-end #2 - search by subject (but return info object, not just course list)
+app.get('/api/subjects/:subject', (req, res) => {
+
+  var coursesInSubject = [];
+
+  // loop thorugh JSON object and find subjects 
+
+    for(var obj in timetable){
+      
+      // only add courses if subject matches one specified
+
+        if(timetable[obj].subject == req.params.subject) {
+
+          // check if array already includes schedule info, if not, push it   
+            
+            if (!coursesInSubject.includes(timetable[obj])){  // not sure if .includes works for objects in arrays
+                coursesInSubject.push(timetable[obj]);
+              }
+        }
+    }
+
+  // if subject code doesnt exist; length of array is zero
+    if(coursesInSubject.length == 0){
+      res.status(404).send("The specified course could not be found")
+    }
+
+  // return the subject array
+    console.log("response sent");
+    res.send(coursesInSubject);
+    return;
 });
 
 // Port
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log("listening on port " + port));
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => console.log("listening on port " + port));
 
-//app.put()
-//app.post()
-//app.delete()
 let JSdata = [];

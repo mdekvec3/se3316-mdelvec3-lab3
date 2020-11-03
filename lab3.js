@@ -1,17 +1,23 @@
+// Marcus Del Vecchio SE3316 Lab3 Front-End Javscript
 
-/* fetch example - delete
+// initializations and global variables
 
-fetch('/profile-account-details', { 
-method: 'POST', 
-body: JSON.stringify({ subjectNo1: courseNo1, subjectNo2: courseNo2, subjectNo3: courseNo3 }) });
+		var tableData = [];	// full or empty list by default?
+		const port = 3000;
 
-*/
+		init();
+		var activeScheduleCoursePairs = {};	// key value pairs of active schedule
+		var activeScheduleData = {};
+		var pendingAddToSchedule = []; // array of schedule objects (append to scheduleData under specfic schedule when "add to schedule" button is clicked)
+		var scheduleData = [] 	// array of ALL schedules and their corresponding courses (with ENTIRE course objects)
+		var scheduleDataObject = {};	// object of ALL schedules and their corresponding courses (with ENTIRE course objects LABELED BY SCHEDULE NAME SO INFO CAN BE ACCESSED)
+	
+// init function calls - needs to be async so we can await for fuctions to assign global variables
 
-// " Replace existing subject-code + course-code pairs with new values and create new pairs if it doesn’t exist."
-// what does this mean?^
-
-var tableData = [];	// full or empty list by default?
-const port = 3000;
+	async function init(){
+		await updateScheduleData();
+		renderSchedulePreview(scheduleData);
+	}
 
 // when search is submitted
 
@@ -96,6 +102,7 @@ const port = 3000;
 		let tableObject = document.getElementById("infoTable");	// may or may not esixt, we are creating it in this method
 		
 		// if table already exists, delete it
+			
 			if(tableObject != null){
 				while(tableObject.firstChild){
 					tableObject.removeChild(tableObject.firstChild)
@@ -113,14 +120,14 @@ const port = 3000;
 			var headerRow = document.createElement("tr");
 			headerRow.class = "tableHeaderRow";
 
-			// generate column for every header item and append it to parent 
+		// generate column for every header item and append it to parent 
 
-				for(var column in headerInfo){
-					let colElement = document.createElement("td");
-					let colText = document.createTextNode(column);
-					colElement.appendChild(colText);
-					headerRow.appendChild(colElement);
-				}
+			for(var column in headerInfo){
+				let colElement = document.createElement("td");
+				let colText = document.createTextNode(column);
+				colElement.appendChild(colText);
+				headerRow.appendChild(colElement);
+			}
 
 			// generate column for part of schedule checkbox
 
@@ -146,9 +153,9 @@ const port = 3000;
 							let colElement = document.createElement("td");
 							
 							// check if part of course_info object bc then extra route has to be added to access property
-							console.log(column);
+							//debugging: console.log(column);
 
-							// doesnt work for some reason - removed broken columns for now 
+							// todo doesnt work for some reason - removed broken columns for now 
 							/*if(column != "Class Name" && column != "Subject" && column != "Description" && column != "Course number" ){
 								let text = "" + data[courseObj]["course_info"][0][headerInfo[column]];
 								let colText = document.createTextNode(text);
@@ -159,7 +166,7 @@ const port = 3000;
 							*/
 							
 							let colText = document.createTextNode(data[courseObj][headerInfo[column]]);
-							console.log(data[courseObj][headerInfo[column]]);
+							// debugging: console.log(data[courseObj][headerInfo[column]]);
 							
 							colElement.appendChild(colText);
 							courseRow.appendChild(colElement);	
@@ -170,19 +177,22 @@ const port = 3000;
 						let colElement = document.createElement("td");
 						let colCheckBox = document.createElement('input');
 						colCheckBox.type = "checkbox";
-						//colCheckBox.value = false;
-
-						//colCheckBox.value = courseObj;
-						//colCheckBox.onclick = checkBoxEvent();	// called to add or remove from course list
 						colCheckBox.name = "included in schedule";	// do anything? label?
 						colCheckBox.id = "rowCheckBox";		// getting this value will be difficult but probs can be done through parent row
 						
 						colCheckBox.addEventListener( 'change', function() {
+    						
     						if(this.checked) {
-        						// append this key value pair to array
+        						// append this course to the the pendingAddToSchedule array
+        						pendingAddToSchedule.push(courseObj);
 
-    						} else {
-        						// remove this key value pair from array
+    						}else {
+        						// remove this course from the pendingAddToSchedule array
+        						try{
+    								pendingAddToSchedule = pendingAddToSchedule.filter(x => x != courseObj); // todo verify this works
+    							}catch(err){
+        							console.log("error: pending schedule list broken; schedule not included in array"); // should never happen
+        						}
     						}
 							});
 
@@ -192,149 +202,257 @@ const port = 3000;
 					// append course row to table
 						table.appendChild(courseRow);
 				}
-		 
-		 // render shortened list above for list of all selected courses to easily remove and see list
-		 // schedule stays the same as they search through courses to add
-		 // notify if conficts?
 	};
 
-// add or remove course from 'selectedCourses' array 
-	
-	
-	
-	/*
-	let checkBoxEvent = function(checkBox){
-		console.log("onchange");
-		//console.log(checkBox.value);
-		
-		if(checkBox.checked){
-			selectedCourses.push()
-		}else{
-
-		}
-	} 
-	*/
-
-// todo add functionality to add selected table rows to schedule list which can then be added to a schdule
-
 // create schedule based on selected courses  and provoding schedule name - ( todo add fucntionality where you can re search and keep selected courses)
-	
-	let selectedCourses = []; // append table courses to this array when they are selected to be added
-	
-	let createSchedule = function(){
 
-		// get corresponding subject code, course code pairs from 'selectedCourses' array
+	async function createSchedule(){
 
-			//put them into an object w "subject code, course code pairs under a given schedule name"
-
-		// get schedule name from schedule name input box
+		let scheduleName = document.getElementById("scheduleName").value;
+		let queryString = 'http://localhost:3000/api/schedules/' + scheduleName;
 
 		// fetch and put the object to the API w schedule name
-	}
+			// todo change route 
+			let response = await fetch(queryString, {
+		 			method: 'POST',
+		 			headers: {		// do I need this?
+						'Content-Type': 'application/json',
+		 			},
+		 		})
+		 		.catch((error) => { console.error("error", error); });
+
+		 		if(response.ok){
+		 			console.log("schedule create success");
+		 		}else{
+		 			alert("schedule create failed: a schedule already exists with the provided name");
+		 		}
+
+		// update global scedules object and active scedule course list
+			updateScheduleData();
+			renderSchedulePreview();
+	};
 
 // render schedule preview data into table
-// todo maybe add checkboxes beside 
+// todo should be re run if schedules are changed; function passing data to this fucnction need to be re run as well
 	
-	let renderSchedule = function(scheduleData){
+	function renderSchedulePreview (scheduleData){
+
+		let parentContainer = document.getElementById("scheduleSelectContainer");
+		let table = document.getElementById("schedulePreviewTable");
+
+		// check if schedule preview already exists, if so, delete it
+			
+			if(table != null){
+				while(parentContainer.firstChild){
+					parentContainer.removeChild(parentContainer.firstChild)
+				}
+			} 
 		
 		let data = scheduleData;
 
-		let parentContainer = document.getElementById("schedulePreview");
-		let table = document.createElement("table");
+		table = document.createElement("table");	// create another tbale inside current column
+		table.id = "schedulePreviewTable"
 
 		let row = document.createElement("tr");
-		let col1 = document.createElement("tr");
-		
-		let col2 = document.createElement("tr");
+
+		let col1 = document.createElement("td");
+		let col2 = document.createElement("td");
 		col2.id = "infoColumn"; // give column 2 an id so we can append data to it
 
 
 		row.appendChild(col1);
 		row.appendChild(col2);
+		table.appendChild(row);
+		parentContainer.appendChild(table);
 
-		let scheduleDropdown = document.createElement('input');
-		colCheckBox.type = "select";
-		colCheckBox.name = "schedule list";	// do anything? label?
-		colCheckBox.id = "scheduleDropdown";
-		colCheckBox.onChange = fillScheduleInfo();
+		let scheduleDropdown = document.createElement('select');
+		scheduleDropdown.id = "activeScheduleDropdown";
+		scheduleDropdown.onChange = fillScheduleInfo();
+		col1.appendChild(scheduleDropdown);
+		scheduleDropdown.onChange = function() { renderScheduleDropDownInfo() };
 
-		// fetch from api to get list of schedule names
+		// generating dropdown options for each schedule name 
 
-			// loop through schedule object and create select option nodes for each
+			for(var schedule in scheduleDataObject){
+				let childOption = document.createElement("option");
+				let optionLabel = document.createTextNode(schedule);
+				childOption.appendChild(optionLabel);
+				scheduleDropdown.appendChild(childOption);
+			}
 
+			var ActiveScheduleLabel = document.createTextNode("Active Schedule ");
+			col1.insertBefore(ActiveScheduleLabel, scheduleDropdown);
+
+			// generating info column - run once at beginning and also run during dropwdown onchange 
+				renderScheduleDropDownInfo();
+
+		// create button outside of table nested in column that adds selected schedules to avctive schedule
+			
+			let addToScheduleButton = document.createElement("button");
+
+			// labels
+				
+				let buttonText = document.createTextNode("Add");
+				addToScheduleButton.appendChild(buttonText);
+				let buttonLabel = document.createTextNode("Add Currently Selected Courses to Active Schedule");
+				parentContainer.appendChild(addToScheduleButton);
+				parentContainer.insertBefore(buttonLabel, addToScheduleButton);
+
+			// functionality
+
+				addToScheduleButton.onclick = function() { submitAddToSchedule() };	//note if we just set it as the inside function it is always called and breaks
 	};
 
-	// render schedule course list into table
-	let fillScheduleInfo = function(){
-		let value = document.getElementById(scheduleDropdown);
+// when different schedule is selected from drop down change corresponding schedule info
+	
+	let renderScheduleDropDownInfo = function(){
+
+		let activeSchedule = document.getElementById("activeScheduleDropdown").value
+
+		// get the ACTIVE schedule object 
+		activeScheduleData = scheduleDataObject[activeSchedule];
+		console.log(scheduleDataObject);
+		console.log(activeScheduleData);
+
+		//activeScheduleCoursePairs = scheduleDataToPairs(activeScheduleData);
+		console.log(activeScheduleData);
+		console.log(activeScheduleCoursePairs);
+		
+		console.log("dropdown onchange");
+		
+		let infoColumn = document.getElementById("infoColumn");
+
+		// generate nodes
+		
+			for(let subject in activeScheduleCoursePairs){
+				let infoText = document.createTextNode(subject + ", " + activeScheduleCoursePairs[subject]);
+				infoColumn.appendChild(infoText);
+			}
+	}
+
+
+// add pendingAddToSchedule object courses to scheduleData object courses and then filter to ensure no duplicates. Then put to data 
+		
+	let submitAddToSchedule = function(){
+
+		for(var course in pendingAddToSchedule){
+			if (!scheduleData.includes(course)){
+				scheduleData.appendChild(course);
+			}
+		}
+
+		// put to storage
+			let activeSchedule = document.getElementById("activeScheduleDropdown").value;
+			putScheduleData(activeSchedule);
+	}
+
+// render schedule course list into table
+	
+	function fillScheduleInfo(){
+		let value = document.getElementById("scheduleDropdown");
 
 		// fetch schedule courses from api
 
 		// for each course add course name to data 
 	}
 
-/* Promise Notes:
- *
- * Promises allow you to use an asynchronous method, get the final value, and queue up “next steps” that you want to 
- * run on the eventually-returned value, in the form of .then()s;
- *
- * If the promise is rejected, the return value passes through any .thens and is picked up by the .catch
- *
- * Each promise object will have a then function that can take two arguments, a success handler and an error handler
- * The success or the error handler in the then function will be called only once, after the asynchronous task finishes.
- * The then function will also return a promise, to allow chaining multiple calls -> but more organized than "callback hell"
- */
+ // put data to schedule and update schedule preview
 
+	 async function putScheduleData(scheduleName){
 
- // post data to schedule and update schedule preview
+	 	//note schedule name is passed and global 'scheduleData' object is put to it. 'scheduleData' is updated before entering.
 
-	 let postData = function(newDataObject, scheduleName){
-
-	 	//note data must be passed in object format
-
-	 	let data = newDataObject;
 	 	let schedule = scheduleName;
 
-	 	//fetch("amazon-web-server-address/...") change to after
+	 	// converting the schedule data (of schedule info objects) to just the subject - course code pairs of the contained courses
+	 	
+	 		let scheduleDataPairs = scheduleDataToPairs(scheduleData);
 
-	 	fetch("http://localhost:3000/api/schedules/" + scheduleName, {
+	 	//fetch("amazon-web-server-address/...") change to after
+	 	/*let response = await fetch("http://localhost:3000/api/schedules/" + scheduleName, {
  			method: 'PUT',
  			headers: {		// do I need this?
 				'Content-Type': 'application/json',
  			},
- 			body: JSON.stringify(data),
+ 			body: JSON.stringify(scheduleDataPairs),
 	 	})
-	 	.then(response => response.json())	// "body.json() is a function that reads the response stream to completion and parses the response as json"
-	 	.then(data => { console.log("success: " + data + "response: " + response) })
 	 	.catch((error) => {
 	 		console.error("error", error)
 	 	});
 
-	 	// todo: update schedule prewview w data JUST PUT into schedule
-	 		// setSchedule(data);
+	 	if(response.ok){
+	 			jsonResponse = await response.json();
+	 			console.log(jsonResponse)
+ 		}else{
+ 			console.log("put failed");
+ 		}*/
+ 		console.log("put attempted");
+
+	 	//update schedule preview w key value pairs just put into the sotage
+	 		renderSchedulePreview(scheduleDataPairs); 	
+
 	 };
 
-// update schdule preview object
+ // convert schedule array pendingAddToSchedule to array of subject code - course code pairs so we can put
+ 	
+ 	let scheduleDataToPairs = function(data){
+
+ 		let scheduleDataPairs = {};
+ 	
+ 		for(var course in data){
+ 			scheduleDataPairs[course.subject] = course.catalog_nbr;
+ 		}
+
+ 		return scheduleDataPairs;
+ 	}
+
+// get the schedule data and assign it to scheduleData
+
+	async function updateScheduleData(){
+
+		let queryString = "http://localhost:" + port + "/api/scheduleInfo";
+
+		// fetch data 
+
+			// fetch("amazon-web-server-address/...") change to after
+				let response = await fetch(queryString , {
+		 			method: 'GET',
+		 			headers: {		// do I need this?
+						'Content-Type': 'application/json',
+		 			},
+		 		})/*.then(response => JSON.parse(response.body)})*/
+		 		.catch((error) => { console.error("error", error); });
+
+		 		if(response.ok){
+		 			jsonData = await response.json();
+		 			console.log("update schedule info success");
+		 		}else{
+		 			console.log("schedule get failed");
+		 		}
+
+ 		// update scheduleData array and scheduleDataObject object
+
+ 			scheduleDataObject = jsonData;	// note this is actually a JS object
+			scheduleData = [];
+
+ 			for(var element in jsonData){
+ 				scheduleData.push(jsonData[element]);
+ 			}
+	}
+
+// 
+
+
 	
-	let setSchedulePreview = function(scheduleData){
+//} 
+/*
+	let activeScheduleCoursePairs;
+	let pendingAddToSchedule;
+	let scheduleData;
+	let scheduleDataObject;
 
-		// todo fix/figure out logic with drop down
-
-		// let scheduleName = (schedule name passed)
-		// let scheduleData = (schdule course list data passed)
-
-		// append table
-		// append columns (2)
-		// append tr
-			// append td
-			// append td
-
-			// append td1 data (schedule drop down)
-				// add onChange="setSchedulePreview()" to schedule name drop down (re render THIS function)
-
-			// append td2 data (schedule items)
-	};
-
+init();
+*/
 
 /*	Table Format:
 
@@ -386,3 +504,15 @@ const port = 3000;
     "catalog_description": "Design and implementation of a large group project illustrating the design concepts being taught and promoting team interaction in a professional setting. \n\nAntirequisite(s): Computer Science 3307A/B/Y.\n\nExtra Information: 1 lecture hour, 3 tutorial/laboratory hours."
   },
 */
+
+/* Promise Notes:
+ *
+ * Promises allow you to use an asynchronous method, get the final value, and queue up “next steps” that you want to 
+ * run on the eventually-returned value, in the form of .then()s;
+ *
+ * If the promise is rejected, the return value passes through any .thens and is picked up by the .catch
+ *
+ * Each promise object will have a then function that can take two arguments, a success handler and an error handler
+ * The success or the error handler in the then function will be called only once, after the asynchronous task finishes.
+ * The then function will also return a promise, to allow chaining multiple calls -> but more organized than "callback hell"
+ */

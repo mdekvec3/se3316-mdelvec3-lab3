@@ -238,7 +238,7 @@ app.post('/api/schedules/:scheduleName', async (req, res) => {
       data[req.params.scheduleName] = {};
       var dataJSON = JSON.stringify(data, null, 2);
       fs.writeFileSync('data.json', dataJSON, () => console.log("POST request resouce written to file"));
-      res.end();
+      res.send("success");
 });
 
 /* data looks like:
@@ -326,7 +326,7 @@ app.put('/api/schedules/:scheduleName', (req, res) => {
   });
 
 // #8
-// better formatting for specifying scheduleList?
+// todo better formatting for specifying scheduleList?
    
     app.get('/api/schedulesList', (req, res) => {
 
@@ -392,6 +392,25 @@ app.get('/api/subjects/:subject', (req, res) => {
     res.send(coursesInSubject);
     return;
 });
+
+// getting all schedules with corresponding course code pairs
+// todo better formatting for specifying scheduleList?
+   
+    app.get('/api/scheduleInfo', (req, res) => {
+
+      console.log("getting schedules");
+      let scheduleList = {};
+
+      for(var schedule in data){
+        scheduleList[schedule] = data[schedule];
+      }
+
+      console.log(scheduleList);
+
+      // else return the object
+
+          res.send(scheduleList);
+    });
 
 // Port
   const port = process.env.PORT || 3000;

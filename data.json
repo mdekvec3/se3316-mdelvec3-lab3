@@ -1,6 +1,22 @@
 {
-  "pokes": {
-    "hello": "world",
-    "eatPokes": true
-  }
+  "schedule1": {
+    "subject1": "course1",
+    "subject2": "course2",
+    "subject3": "course3",
+    "1201B": "APPLMATH",
+    "1411A": "APPLMATH",
+    "1411B": "APPLMATH",
+    "2270A": "APPLMATH"
+  },
+  "schedule2": {
+    "subject1": "course1"
+  },
+  "test": {},
+  "test2": {},
+  "test6": {},
+  "test7": {},
+  "morning classes": {},
+  "hello": {},
+  "test9": {},
+  "test10": {}
 }

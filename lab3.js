@@ -8,15 +8,18 @@
 		init();
 		var activeScheduleCoursePairs = {};	// key value pairs of active schedule
 		var activeScheduleData = {};
-		var pendingAddToSchedule = []; // array of schedule objects (append to scheduleData under specfic schedule when "add to schedule" button is clicked)
+		var masterActiveSchedule;	// active schdule tracker for when re regenerate drop down in renderSchedulePreview and meed old value
+		var pendingAddToSchedule = {};
+		// changed to object of key value pairs of all courses to add to the schedule
+		 // array of schedule objects (append to scheduleData under specfic schedule when "add to schedule" button is clicked)
 		var scheduleData = [] 	// array of ALL schedules and their corresponding courses (with ENTIRE course objects)
-		var scheduleDataObject = {};	// object of ALL schedules and their corresponding courses (with ENTIRE course objects LABELED BY SCHEDULE NAME SO INFO CAN BE ACCESSED)
+		var scheduleDataObject = {};	// NVM THIS IS OBJECT OF OBJECTS OF KEY VALUE PAIRS object of ALL schedules and their corresponding courses (with ENTIRE course objects LABELED BY SCHEDULE NAME SO INFO CAN BE ACCESSED)
 	
 // init function calls - needs to be async so we can await for fuctions to assign global variables
 
 	async function init(){
 		await updateScheduleData();
-		renderSchedulePreview(scheduleData);
+		renderSchedulePreview();
 	}
 
 // when search is submitted
@@ -35,7 +38,7 @@
 			let componentValue = document.getElementById("componentDropdown").value;	// optional
 
 		// setup query string
-			queryString += "http://localhost:" + port + "/api/subjects/" + subjectValue;
+			queryString += "https://ec2-52-204-102-166.compute-1.amazonaws.com:" + port + "/api/subjects/" + subjectValue;
 
 			// if course value assigned fetch from route #3, else, use route #2 (search by subject only)
 				
@@ -68,7 +71,7 @@
 	 		}
 			
 			// render returned object in table
-				console.log(jsonData);
+				//console.log(jsonData);
 				renderTable(jsonData);
 	};
 
@@ -132,7 +135,7 @@
 			// generate column for part of schedule checkbox
 
 				let colElement = document.createElement("td");
-				let colText = document.createTextNode("included in active schedule");
+				let colText = document.createTextNode("add to active schedule");
 				colElement.appendChild(colText);
 				headerRow.appendChild(colElement);
 
@@ -142,8 +145,9 @@
 
 			// render row for each course object in data
 
-				for(var courseObj in data ){
+				for(var courseObj in data){
 
+					console.log(data);
 					var courseRow = document.createElement("tr");
 					courseRow.class = "courseRow";
 
@@ -180,16 +184,46 @@
 						colCheckBox.name = "included in schedule";	// do anything? label?
 						colCheckBox.id = "rowCheckBox";		// getting this value will be difficult but probs can be done through parent row
 						
-						colCheckBox.addEventListener( 'change', function() {
-    						
-    						if(this.checked) {
-        						// append this course to the the pendingAddToSchedule array
-        						pendingAddToSchedule.push(courseObj);
+						// associate key value with the checkbox
+							var obj = {}
+							var key = data[courseObj].subject;
+							var value = data[courseObj].catalog_nbr;
+							obj[key] = value;
+							colCheckBox.keyValue = obj;
 
+
+
+						colCheckBox.addEventListener( 'change', function() {
+    					
+    					// convert course info in data object to subject value pair
+
+    						//let courseKeyValue = data[courseObj].subject + ", " + data[courseObj].catalog_nbr;
+
+    						if(this.checked) {
+    							
+        						// append this course to the the pendingAddToSchedule array of key values
+        						for(var key in this.keyValue){
+        							console.log(key);
+        							console.log(colCheckBox.keyValue[key]);
+
+        							// note keys and values reversed bc subjects arent unique and are overriding
+        							//pendingAddToSchedule[key] = colCheckBox.keyValue[key];
+        							pendingAddToSchedule[colCheckBox.keyValue[key]] = key;
+        						}
+        						console.log(pendingAddToSchedule);
+        						
     						}else {
         						// remove this course from the pendingAddToSchedule array
         						try{
-    								pendingAddToSchedule = pendingAddToSchedule.filter(x => x != courseObj); // todo verify this works
+        							for(var key1 in pendingAddToSchedule){
+    									for(var key in this.keyValue){
+	    									if(key1 == this.keyValue[key]){
+	    										delete pendingAddToSchedule[key1];
+	    										console.log("deleted");
+	    										console.log(pendingAddToSchedule);
+	    									}
+    									}
+    								}
     							}catch(err){
         							console.log("error: pending schedule list broken; schedule not included in array"); // should never happen
         						}
@@ -204,12 +238,16 @@
 				}
 	};
 
+// flip pendingAddToSchedule keybvalues back?
+
+
 // create schedule based on selected courses  and provoding schedule name - ( todo add fucntionality where you can re search and keep selected courses)
 
 	async function createSchedule(){
 
 		let scheduleName = document.getElementById("scheduleName").value;
-		let queryString = 'http://localhost:3000/api/schedules/' + scheduleName;
+		//let queryString = 'http://localhost:3000/api/schedules/' + scheduleName;
+		let queryString ='https://ec2-52-204-102-166.compute-1.amazonaws.com:3000/api/schedules/' + scheduleName;
 
 		// fetch and put the object to the API w schedule name
 			// todo change route 
@@ -235,27 +273,33 @@
 // render schedule preview data into table
 // todo should be re run if schedules are changed; function passing data to this fucnction need to be re run as well
 	
-	function renderSchedulePreview (scheduleData){
+	function renderSchedulePreview(){
 
 		let parentContainer = document.getElementById("scheduleSelectContainer");
 		let table = document.getElementById("schedulePreviewTable");
+		let dropDownCol = document.getElementById("dropdownColumn");
 
 		// check if schedule preview already exists, if so, delete it
 			
+			if(dropDownCol != null){
+				while(dropDownCol.firstChild){
+					dropDownCol.removeChild(dropDownCol.firstChild)
+				}
+			} 
+
 			if(table != null){
 				while(parentContainer.firstChild){
 					parentContainer.removeChild(parentContainer.firstChild)
 				}
 			} 
 		
-		let data = scheduleData;
-
 		table = document.createElement("table");	// create another tbale inside current column
 		table.id = "schedulePreviewTable"
 
 		let row = document.createElement("tr");
 
 		let col1 = document.createElement("td");
+		col1.id = "dropdownColumn";
 		let col2 = document.createElement("td");
 		col2.id = "infoColumn"; // give column 2 an id so we can append data to it
 
@@ -267,9 +311,9 @@
 
 		let scheduleDropdown = document.createElement('select');
 		scheduleDropdown.id = "activeScheduleDropdown";
-		scheduleDropdown.onChange = fillScheduleInfo();
+		scheduleDropdown.value = masterActiveSchedule;
+		scheduleDropdown.onchange = function(){ renderScheduleDropDownInfo() };
 		col1.appendChild(scheduleDropdown);
-		scheduleDropdown.onChange = function() { renderScheduleDropDownInfo() };
 
 		// generating dropdown options for each schedule name 
 
@@ -283,8 +327,8 @@
 			var ActiveScheduleLabel = document.createTextNode("Active Schedule ");
 			col1.insertBefore(ActiveScheduleLabel, scheduleDropdown);
 
-			// generating info column - run once at beginning and also run during dropwdown onchange 
-				renderScheduleDropDownInfo();
+		// generating info column - run once at beginning and also run during dropwdown onchange 
+			renderScheduleDropDownInfo();
 
 		// create button outside of table nested in column that adds selected schedules to avctive schedule
 			
@@ -308,88 +352,95 @@
 	let renderScheduleDropDownInfo = function(){
 
 		let activeSchedule = document.getElementById("activeScheduleDropdown").value
-
-		// get the ACTIVE schedule object 
-		activeScheduleData = scheduleDataObject[activeSchedule];
-		console.log(scheduleDataObject);
-		console.log(activeScheduleData);
-
-		//activeScheduleCoursePairs = scheduleDataToPairs(activeScheduleData);
-		console.log(activeScheduleData);
-		console.log(activeScheduleCoursePairs);
-		
-		console.log("dropdown onchange");
-		
 		let infoColumn = document.getElementById("infoColumn");
 
-		// generate nodes
-		
-			for(let subject in activeScheduleCoursePairs){
-				let infoText = document.createTextNode(subject + ", " + activeScheduleCoursePairs[subject]);
+		console.log("active scedule: " + activeSchedule);
+
+		// check if info already exists, if so, delete it
+
+			if(infoColumn.firstChild){
+				while(infoColumn.firstChild){
+					infoColumn.removeChild(infoColumn.firstChild)
+				}
+			} 
+
+		// get the ACTIVE schedule object and generate nodes 
+
+			activeScheduleData = scheduleDataObject[activeSchedule];	
+
+			if(true){
+				for(let subject in activeScheduleData){
+					let infoText = document.createTextNode("[" + subject + "-" + activeScheduleData[subject] + "]");
+					infoColumn.appendChild(infoText);
+				}
+			}else{
+				// todo check if empty
+				let infoText = document.createTextNode("no assigned courses");
 				infoColumn.appendChild(infoText);
 			}
 	}
 
 
-// add pendingAddToSchedule object courses to scheduleData object courses and then filter to ensure no duplicates. Then put to data 
+// add pendingAddToSchedule object courses to scheduleDataObject object courses and then filter to ensure no duplicates. Then put to data 
 		
 	let submitAddToSchedule = function(){
+	
+	// remember key values are flipped in 'pendingAddToSchedule' so keys are all unique
+
+		let activeSchedule = document.getElementById("activeScheduleDropdown").value
+		console.log(pendingAddToSchedule);
+		//console.log(scheduleDataObject);
 
 		for(var course in pendingAddToSchedule){
-			if (!scheduleData.includes(course)){
-				scheduleData.appendChild(course);
+			var subject = pendingAddToSchedule[course];
+
+			for(var course1 in scheduleDataObject[activeSchedule]){
+				var subject1 =  scheduleDataObject[activeSchedule][course1];
+
+				if(!(subject == subject1 && course == course1)){
+					console.log("key pair appended");
+					scheduleDataObject[activeSchedule][course] = pendingAddToSchedule[course];
+					console.log(scheduleDataObject[activeSchedule]);
+				}
 			}
 		}
 
 		// put to storage
-			let activeSchedule = document.getElementById("activeScheduleDropdown").value;
-			putScheduleData(activeSchedule);
-	}
-
-// render schedule course list into table
-	
-	function fillScheduleInfo(){
-		let value = document.getElementById("scheduleDropdown");
-
-		// fetch schedule courses from api
-
-		// for each course add course name to data 
+			//putScheduleData(activeSchedule);
+			putScheduleData();
 	}
 
  // put data to schedule and update schedule preview
 
-	 async function putScheduleData(scheduleName){
+	 async function putScheduleData(){
 
 	 	//note schedule name is passed and global 'scheduleData' object is put to it. 'scheduleData' is updated before entering.
 
-	 	let schedule = scheduleName;
-
-	 	// converting the schedule data (of schedule info objects) to just the subject - course code pairs of the contained courses
-	 	
-	 		let scheduleDataPairs = scheduleDataToPairs(scheduleData);
+	 	let schedule = document.getElementById("activeScheduleDropdown").value;
+	 	let putData = scheduleDataObject[schedule];
+	 
 
 	 	//fetch("amazon-web-server-address/...") change to after
-	 	/*let response = await fetch("http://localhost:3000/api/schedules/" + scheduleName, {
+	 	let response = await fetch("https://ec2-52-204-102-166.compute-1.amazonaws.com:3000/api/schedules/" + schedule {
  			method: 'PUT',
  			headers: {		// do I need this?
 				'Content-Type': 'application/json',
  			},
- 			body: JSON.stringify(scheduleDataPairs),
+ 			body: JSON.stringify(putData),
 	 	})
 	 	.catch((error) => {
 	 		console.error("error", error)
 	 	});
 
 	 	if(response.ok){
-	 			jsonResponse = await response.json();
-	 			console.log(jsonResponse)
+	 			console.log("put successful");
  		}else{
  			console.log("put failed");
- 		}*/
- 		console.log("put attempted");
+ 		}
 
 	 	//update schedule preview w key value pairs just put into the sotage
-	 		renderSchedulePreview(scheduleDataPairs); 	
+	 		masterActiveSchedule = schedule;
+	 		renderSchedulePreview(); 	
 
 	 };
 
@@ -410,7 +461,7 @@
 
 	async function updateScheduleData(){
 
-		let queryString = "http://localhost:" + port + "/api/scheduleInfo";
+		let queryString = "https://ec2-52-204-102-166.compute-1.amazonaws.com:" + port + "/api/scheduleInfo";
 
 		// fetch data 
 
@@ -434,85 +485,11 @@
 
  			scheduleDataObject = jsonData;	// note this is actually a JS object
 			scheduleData = [];
+			console.log(scheduleDataObject);
 
  			for(var element in jsonData){
  				scheduleData.push(jsonData[element]);
  			}
 	}
 
-// 
 
-
-	
-//} 
-/*
-	let activeScheduleCoursePairs;
-	let pendingAddToSchedule;
-	let scheduleData;
-	let scheduleDataObject;
-
-init();
-*/
-
-/*	Table Format:
-
-<table>
-	<col>
-	<col>
-	<col>
-	<col>
-	
-	<tr>
-		<td>
-		</td>
-
-		<td>
-		</td>
-		
-		<td>
-		</td>
-	</tr>
-
-	<tr>
-		...
-
-*/
-
-/* sample data obejct
-
-"catalog_nbr": "3350B",
-    "subject": "SE",
-    "className": "SOFTWARE ENGINEERING DESIGN I",
-    "course_info": [
-      {
-        "class_nbr": 4489,
-        "start_time": "10:30 AM",
-        "descrlong": "Prerequisite(s): SE 2203A/B, SE 3352A/B.\nCorequisite(s): SE 3351A/B, SE 3353A/B.",
-        "end_time": "11:30 AM",
-        "campus": "Main",
-        "facility_ID": "ACEB-1450",
-        "days": [
-          "W"
-        ],
-        "instructors": [],
-        "class_section": "001",
-        "ssr_component": "LEC",
-        "enrl_stat": "Not full",
-        "descr": "RESTRICTED TO YR 3 SOFTWARE ENGINEERING STUDENTS AND YR 2 SOFTWARE/HBA STUDENTS."
-      }
-    ],
-    "catalog_description": "Design and implementation of a large group project illustrating the design concepts being taught and promoting team interaction in a professional setting. \n\nAntirequisite(s): Computer Science 3307A/B/Y.\n\nExtra Information: 1 lecture hour, 3 tutorial/laboratory hours."
-  },
-*/
-
-/* Promise Notes:
- *
- * Promises allow you to use an asynchronous method, get the final value, and queue up “next steps” that you want to 
- * run on the eventually-returned value, in the form of .then()s;
- *
- * If the promise is rejected, the return value passes through any .thens and is picked up by the .catch
- *
- * Each promise object will have a then function that can take two arguments, a success handler and an error handler
- * The success or the error handler in the then function will be called only once, after the asynchronous task finishes.
- * The then function will also return a promise, to allow chaining multiple calls -> but more organized than "callback hell"
- */

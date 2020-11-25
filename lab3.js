@@ -38,7 +38,9 @@
 			let componentValue = document.getElementById("componentDropdown").value;	// optional
 
 		// setup query string
-			queryString += "https://ec2-52-204-102-166.compute-1.amazonaws.com:" + port + "/api/subjects/" + subjectValue;
+			
+			queryString += "https://ec2-100-25-183-232.compute-1.amazonaws.com" + port + "/api/subjects/" + subjectValue;
+			//queryString += "http://localhost:" + port + "/api/subjects/" + subjectValue;
 
 			// if course value assigned fetch from route #3, else, use route #2 (search by subject only)
 				
@@ -247,7 +249,9 @@
 
 		let scheduleName = document.getElementById("scheduleName").value;
 		//let queryString = 'http://localhost:3000/api/schedules/' + scheduleName;
-		let queryString ='https://ec2-52-204-102-166.compute-1.amazonaws.com:3000/api/schedules/' + scheduleName;
+		
+		let queryString ='https://ec2-100-25-183-232.compute-1.amazonaws.com:3000/api/schedules/' + scheduleName;
+		//let queryString = 'http://localhost:3000/api/schedules/' + scheduleName;
 
 		// fetch and put the object to the API w schedule name
 			// todo change route 
@@ -392,36 +396,45 @@
 		//console.log(scheduleDataObject);
 
 		for(var course in pendingAddToSchedule){
+
+			/* this will be the subject 
 			var subject = pendingAddToSchedule[course];
 
 			for(var course1 in scheduleDataObject[activeSchedule]){
 				var subject1 =  scheduleDataObject[activeSchedule][course1];
 
 				if(!(subject == subject1 && course == course1)){
-					console.log("key pair appended");
+					console.log("key pair appended");*/
 					scheduleDataObject[activeSchedule][course] = pendingAddToSchedule[course];
 					console.log(scheduleDataObject[activeSchedule]);
+				/*}
+				else{
+					console.log("failed");
 				}
-			}
+			}*/
 		}
 
 		// put to storage
-			//putScheduleData(activeSchedule);
-			putScheduleData();
+			putScheduleData(activeSchedule);
+			//putScheduleData();
 	}
 
  // put data to schedule and update schedule preview
 
-	 async function putScheduleData(){
+	 async function putScheduleData(activeSchedule){
 
 	 	//note schedule name is passed and global 'scheduleData' object is put to it. 'scheduleData' is updated before entering.
 
 	 	let schedule = document.getElementById("activeScheduleDropdown").value;
-	 	let putData = scheduleDataObject[schedule];
+	 	console.log("putting to: " + schedule);
+
+		console.log(scheduleDataObject);
+	 	let putData = scheduleDataObject[activeSchedule];
+	 	console.log(putData);
 	 
 
 	 	//fetch("amazon-web-server-address/...") change to after
-	 	let response = await fetch("https://ec2-52-204-102-166.compute-1.amazonaws.com:3000/api/schedules/" + schedule {
+	 	let response = await fetch("https://ec2-100-25-183-232.compute-1.amazonaws.com:3000/api/schedules/" /*"http://localhost:3000/api/schedules/" */ + schedule, {
  			method: 'PUT',
  			headers: {		// do I need this?
 				'Content-Type': 'application/json',
@@ -431,6 +444,7 @@
 	 	.catch((error) => {
 	 		console.error("error", error)
 	 	});
+	 	console.log(response);
 
 	 	if(response.ok){
 	 			console.log("put successful");
@@ -461,8 +475,9 @@
 
 	async function updateScheduleData(){
 
-		let queryString = "https://ec2-52-204-102-166.compute-1.amazonaws.com:" + port + "/api/scheduleInfo";
-
+		//let queryString = "https://ec2-52-204-102-166.compute-1.amazonaws.com:" + port + "/api/scheduleInfo";
+		let queryString = "http://ec2-100-25-183-232.compute-1.amazonaws.com:" + port + "/api/scheduleInfo";
+		
 		// fetch data 
 
 			// fetch("amazon-web-server-address/...") change to after

@@ -27,6 +27,12 @@ app.get('/', (req, res) => {
   return;
 });
 
+// lab4 route for returning entire timetable data object
+app.get('/api/courseData', (req, res) => { 
+  console.log(timetable);
+  res.send(timetable)
+})
+
 // seperate method that is just for courses? not w descriptions
 // make all into one method? optional params handled within?
 
